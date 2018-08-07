@@ -52,8 +52,10 @@ export function subscribe(subscriber, ...customArgs) {
 const callReducer = debounce(0, function() {
   let lastState = currentState;
   const queue = actionQueue.slice();
+  const resolves = [];
   actionQueue.length = 0;
   queue.forEach(reduceContext => {
+    resolves.push(reduceContext.resolve);
     function next(context) {
       return reducers.reduce((state, reducer) => {
         const result = reducer(state, context);
@@ -70,7 +72,7 @@ const callReducer = debounce(0, function() {
       getState
     });
   });
-
+  resolves.forEach(resolve => resolve());
   if (lastState !== currentState) {
     subscribers.forEach(subscriber => subscriber(currentState));
   }
@@ -81,8 +83,10 @@ function getState() {
 }
 
 function dispatch(action, payload) {
-  actionQueue.push({ action, payload });
-  callReducer();
+  return new Promise(resolve => {
+    actionQueue.push({ action, payload, resolve });
+    callReducer();
+  });
 }
 
 function reducer(value) {

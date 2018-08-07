@@ -107,8 +107,10 @@ function subscribe(subscriber) {
 var callReducer = debounce(0, function () {
   var lastState = currentState;
   var queue = actionQueue.slice();
+  var resolves = [];
   actionQueue.length = 0;
   queue.forEach(function (reduceContext) {
+    resolves.push(reduceContext.resolve);
     function next(context) {
       return reducers.reduce(function (state, reducer) {
         var result = reducer(state, context);
@@ -125,7 +127,9 @@ var callReducer = debounce(0, function () {
       getState: getState
     }));
   });
-
+  resolves.forEach(function (resolve) {
+    return resolve();
+  });
   if (lastState !== currentState) {
     subscribers.forEach(function (subscriber) {
       return subscriber(currentState);
@@ -138,8 +142,10 @@ function getState() {
 }
 
 function dispatch(action, payload) {
-  actionQueue.push({ action: action, payload: payload });
-  callReducer();
+  return new Promise(function (resolve) {
+    actionQueue.push({ action: action, payload: payload, resolve: resolve });
+    callReducer();
+  });
 }
 
 function reducer(value) {

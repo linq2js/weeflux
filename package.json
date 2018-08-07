@@ -1,6 +1,6 @@
 {
   "name": "weeflux",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A state management based on flux architecture",
   "main": "./dist/index.js",
   "scripts": {
